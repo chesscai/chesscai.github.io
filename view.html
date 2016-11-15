@@ -1,0 +1,190 @@
+---
+layout: null
+title: View
+description: "View"
+---
+<head>
+  <title>canvas-ball3D</title>
+  <meta charset="utf-8">
+  <style>
+    html,body,*{
+      margin: 0;
+      padding: 0;
+      font-family: 'Miscrosoft YaHei';
+      font-size: 14px;
+    }
+    #canvas{
+      display: block;
+      background: #300b38;
+            background: -webkit-gradient(linear, 50% 0%, 50% 100%, from(#450753), to(#000));
+            background: -webkit-linear-gradient(top, #450753, #000);
+            background: -moz-linear-gradient(top, #450753, #000);
+            background: -o-linear-gradient(top, #450753, #000);
+            background: -ms-linear-gradient(top, #450753, #000);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas">your browser do not support canvas</canvas>
+
+  <script>
+    window.onload = function(){
+
+      window.Utils = function(){};
+      //获取鼠标相对于ele的距离
+      Utils.prototype.captureMouse = function(ele){
+        var mouse = {
+          x: 0,
+          y: 0
+        };
+
+        ele.addEventListener('mousemove',function(e){
+          var e = e || window.event;
+          var x,y;
+          if(e.pageX || e.pageY){
+            //非IE可直接读取
+            x = e.pageX;
+            y = e.pageY;
+          }else{
+            //scrollLeft为body距离浏览器顶部的滚动距离；
+            //body在chrome有效，在ff，ie为0；
+            //documentElement在ff,ie有效，在chrome为0；
+            x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+            y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+          }
+
+          x -= ele.offsetLeft;
+          y -= ele.offsetTop;
+          mouse.x = x;
+          mouse.y = y;
+        },false);
+        return mouse;
+      };
+
+      //animationFrame兼容
+      window.requestAnimationFrame = window.requestAnimationFrame ||
+        (window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.msRequestAnimationFrame ||
+                window.oRequestAnimationFrame ||
+                function(callback){
+                  return setTimeout(callback,1000/60);
+                });
+
+            window.cancelAnimationFrame = window.cancelAnimationFrame ||
+        (window.cancelRequestAnimationFrame ||
+                window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                window.clearTimeout);
+
+      //获取浏览器可视区域：前者是IE9+、other，后者是IE8-
+            var w = window.innerWidth || document.documentElement.clientWidth;
+            var h = window.innerHeight || document.documentElement.clientHeight;
+
+      var canvas = document.getElementById('canvas');
+      var ctx = canvas.getContext('2d');
+      canvas.width = w;
+      canvas.height = h;
+
+
+      var Ball = function(){
+        this.x = 0;
+        this.y = 0;
+        this.r = 10;
+        this.xpos = 0;
+        this.ypos = 0;
+        this.zpos = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.vz = 0;
+        this.color = 'rgba(255,255,255,.8)';
+        this.scale = 1;
+        this.visabled = true;
+      };
+      Ball.prototype.draw = function(context){
+        context.save();
+        context.translate(this.x,this.y);
+        context.fillStyle = this.color;
+        context.beginPath();
+        context.arc(0,0,this.r*this.scale,0,Math.PI*2,false);
+        context.closePath();
+        context.fill();
+        context.restore();
+      }
+
+      var utils = new Utils();
+      var mouse = utils.captureMouse(canvas);
+      var centerX = canvas.width/2;
+      var centerY = canvas.height/2;
+      var balls = [];           //球群
+      var length = 400;         //球数
+      var gravity = 0.2;        //重力常量
+      var bounce = -0.6;        //弹力系数
+      var floor = centerY*2/3;  //地面y值
+      var fl = 250;             //焦距
+          var colors = [            //粒子颜色区间
+            '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+            '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50',
+            '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800',
+            '#FF5722'
+        ];
+
+        for(var i= 0; i < length; i++){
+          var ball = new Ball();
+          ball.color = colors[Math.floor(Math.random()*colors.length)];
+          ball.ypos = -centerY + 50;
+          ball.x = centerX;
+          ball.vx = Math.random()*10 -5;
+          ball.vy = Math.random()*10 -5;
+          ball.vz = Math.random()*10 -5;
+          balls.push(ball);
+        }
+
+      function move(ball){
+        ball.vy += gravity;
+        ball.xpos += ball.vx;
+                ball.ypos += ball.vy;
+                ball.zpos += ball.vz;
+                if(ball.ypos > floor){
+                  ball.ypos = floor;
+                  ball.vy *= bounce;
+                }
+
+                if(ball.zpos < fl){
+                  var scale = fl/(fl - ball.zpos);
+                  ball.scale = scale;
+                  ball.x = ball.xpos*scale + centerX;
+                  ball.y = ball.ypos*scale + centerY;
+                  ball.visabled = true;
+                }else {
+                  ball.visabled = false;
+                }
+      };
+
+      function draw(ball){
+        if(ball.visabled){
+          ball.draw(ctx);
+        }
+      };
+
+      function sort(a, b){
+               return (b.zpos - a.zpos);
+            };
+      
+
+      (function run(){
+        
+        window.requestAnimationFrame(run,canvas);
+        ctx.clearRect(0,0,w,h);
+
+        balls.forEach(move);
+        balls.forEach(sort);
+        balls.forEach(draw);
+
+      })();
+      
+    }
+  </script>
+</body>
