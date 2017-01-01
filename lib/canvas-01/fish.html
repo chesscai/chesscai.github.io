@@ -1,0 +1,376 @@
+---
+layout: view
+description: "鱼"
+categories: [canvas,lib]
+---
+
+    <style>
+        #canvas{
+            display: block;
+            width: 800px;
+            height: 600px;
+            margin: 10px auto;
+            border: 1px solid #00f;
+            background: url(http://img.yi114.com/2016810194325_173018.jpg) 50% 0 no-repeat;
+            background-size: cover;
+        }
+
+    </style>
+    <canvas id="canvas">your browser do not support canvas</canvas>
+
+    <script>
+        window.onload = function(){
+
+            window.Utils = function(){};
+            //获取鼠标相对于ele的距离
+            Utils.prototype.captureMouse = function(ele){
+                var mouse = {
+                    x: 0,
+                    y: 0
+                };
+
+                ele.addEventListener('mousemove',function(e){
+                    var e = e || window.event;
+                    var x,y;
+                    if(e.pageX || e.pageY){
+                        //非IE可直接读取
+                        x = e.pageX;
+                        y = e.pageY;
+                    }else{
+                        //scrollLeft为body距离浏览器顶部的滚动距离；
+                        //body在chrome有效，在ff，ie为0；
+                        //documentElement在ff,ie有效，在chrome为0；
+                        x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                        y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+                    }
+
+                    x -= ele.offsetLeft;
+                    y -= ele.offsetTop;
+                    mouse.x = x;
+                    mouse.y = y;
+                },false);
+                return mouse;
+            };
+
+            //animationFrame兼容
+            window.requestAnimationFrame = window.requestAnimationFrame ||
+                (window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.msRequestAnimationFrame ||
+                window.oRequestAnimationFrame ||
+                function(callback){
+                    return setTimeout(callback,1000/60);
+                });
+
+            window.cancelAnimationFrame = window.cancelAnimationFrame ||
+                (window.cancelRequestAnimationFrame ||
+                window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                window.clearTimeout);
+
+
+            var c = document.getElementById('canvas');
+            var ctx = c.getContext('2d');
+            c.width = 800;
+            c.height = 600;
+
+
+            var Fish = function(){
+                this.x = 0;
+                this.y = 0;
+                this.offsetDail = 0;      //尾巴偏移
+                this.offsetMouth = 0;     //嘴巴偏移
+                this.rotation = 0;        //旋转弧度
+                this.ax = 0;              //x轴加速度
+                this.ay = 0;              //y轴加速度
+                this.vx = 0;              //x轴速度
+                this.vy = 0;              //y轴速度
+                this.isSwing = false;
+                this.color = 'rgba(200,100,25,.9)';
+            };
+            Fish.prototype.draw = function(ctx){
+                ctx.save();
+                ctx.translate(this.x,this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = this.color;
+
+                ctx.beginPath();
+                ctx.moveTo(-20,-5+this.offsetDail);
+                ctx.lineTo(40,10);
+                ctx.lineTo(65,4+this.offsetMouth*4/5);
+                ctx.quadraticCurveTo(70,-2+this.offsetMouth,65,0+this.offsetMouth*4/5);
+                ctx.lineTo(45,0);
+                ctx.lineTo(60,0-this.offsetMouth*2/5);
+                ctx.quadraticCurveTo(65,-2-this.offsetMouth*4/5,60,-4-this.offsetMouth*2/5);
+                ctx.lineTo(40,-10);
+                ctx.lineTo(38,-12);
+                ctx.lineTo(10,-12 + this.offsetDail);
+                ctx.lineTo(40,10);
+                ctx.lineTo(40,-10);
+                ctx.lineTo(-20,5 + this.offsetDail);
+                ctx.closePath();
+                ctx.fill();
+
+
+                ctx.fillStyle = 'rgba(230,200,40,.8)';
+                ctx.strokeStyle = 'rgba(230,200,40,.8)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(40,-10);
+                ctx.lineTo(40,10);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(20,-(10 - this.offsetDail)/2);
+                ctx.lineTo(20,(10 + this.offsetDail)/2);
+                ctx.lineTo(10,(10 + this.offsetDail)/4);
+                ctx.lineTo(10,-(10 - this.offsetDail)/4);
+                ctx.closePath();
+                ctx.fill();
+
+                //眼睛
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(50,-5 - this.offsetMouth*2/3,2,0,Math.PI*2,false);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(50,-5 - this.offsetMouth*2/3,1,0,Math.PI*2,false);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            };
+
+
+
+
+            var Bubble = function(){
+                this.x = 0;
+                this.y = 0;
+                this.r = 0;
+                this.angle = 0;                     //x轴偏移弧度
+                this.bubbleRange = 0;               //x轴偏移幅度
+                this.incrementY = Math.random()*2;  //y轴随机增量
+                this.color = 'rgba(255,255,255,.8)';
+            };
+            Bubble.prototype.draw = function(ctx){
+                ctx.save();
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(this.x,this.y,this.r,0,Math.PI*2,false);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore();
+            };
+
+
+
+
+            var Shit = function(){
+                this.x = Math.random()*c.width;
+                this.y = Math.random()*c.height;
+                this.vx = Math.random() > 0.5 ? Math.random()*3 : -Math.random()*3;
+                this.vy = Math.random() > 0.5 ? Math.random()*3 : -Math.random()*3;
+                this.color = 'rgba(0,0,0,.9)';
+            };
+            Shit.prototype.draw = function(ctx){
+                ctx.save();
+                ctx.translate(this.x,this.y);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(-15,0);
+                ctx.quadraticCurveTo(0,4,15,0);
+                ctx.quadraticCurveTo(20,-5,15,-10);
+                ctx.lineTo(10,-10);
+                ctx.quadraticCurveTo(15,-15,10,-20);
+                ctx.lineTo(5,-20);
+                ctx.quadraticCurveTo(2,-25,8,-30);
+                ctx.quadraticCurveTo(-2,-25,-5,-20);
+                ctx.lineTo(-10,-20);
+                ctx.quadraticCurveTo(-15,-15,-10,-10);
+                ctx.lineTo(-15,-10);
+                ctx.quadraticCurveTo(-20,-5,-15,0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            };
+
+            var centerX = c.width/2;
+            var centerY = c.height/2;
+            var directionDail = 1;        //尾巴运动方向，1表示正方向，-1表示反方向
+            var directionMouth = 1;       //嘴巴运动方向，1表示正方向，-1表示反方向
+            var incrementDail = 0.5;      //尾巴增量
+            var incrementMouth = 0.2;     //嘴巴增量
+            var incrementRotation = 0.5;  //初始旋转增量：递增（角度）
+            var incrementMove = 1;        //初始位移增量（加速度）
+            var rotation = 0;             //实时旋转量（角度）
+            
+            var bubbleNum = 4;
+            var bubbles = [];
+
+            var shitNum = 5;
+            var shits = [];
+
+            var fish = new Fish();
+            fish.x = centerX;
+            fish.y = centerY;
+            fish.draw(ctx);
+
+            for(var i = 0; i<bubbleNum; i++){
+                var bubble = new Bubble();
+                bubble.x = fish.x + 60*Math.cos(fish.rotation);
+                bubble.y = fish.y + 60*Math.sin(fish.rotation);
+                bubble.r = 1 + Math.random()*2;
+                bubbles.push(bubble);
+            };
+
+            for(var i = 0; i < shitNum; i++){
+                var shit = new Shit();
+                shits.push(shit);
+            };
+
+            
+            window.addEventListener('keydown',function(e){
+                var keyCode = e.keyCode;
+                switch(keyCode){
+                    case 38:{                  //up
+                        fish.ax = Math.cos(fish.rotation)*incrementMove;
+                        fish.ay = Math.sin(fish.rotation)*incrementMove;
+                        fish.vx += fish.ax;
+                        fish.vy += fish.ay;
+                        fish.x += fish.vx;
+                        fish.y += fish.vy;
+                        fish.isSwing = true;
+                        incrementDail = 1;
+                        incrementMouth = 0.4;
+                        break;
+                    }
+                    case 37:{                  //left
+                        rotation -= incrementRotation;
+                        if(incrementRotation < 5){
+                            incrementRotation +=2;
+                        }
+                        fish.rotation = rotation*Math.PI/180*2;
+                        break;
+                    }
+                    case 39:{                  //right
+                        rotation += incrementRotation;
+                        if(incrementRotation < 5){
+                            incrementRotation +=2;
+                        }
+                        fish.rotation = rotation*Math.PI/180*2;
+                        break;
+                    }
+                }
+                
+            },false);
+
+            window.addEventListener('keyup',function(e){
+                var keyCode = e.keyCode;
+                switch(keyCode){
+                    case 38:{                  //up
+                        fish.ax = 0;
+                        fish.ay = 0;
+                        fish.vx = 0;
+                        fish.vy = 0;
+                        fish.isSwing = false;
+                        incrementDail = 0.5;
+                        incrementMouth = 0.2;
+                        break;
+                    }
+                    case 37:{
+                        incrementRotation = 0.5;
+                        break;
+                    }
+                    case 39:{
+                        incrementRotation = 0.5;
+                        break;
+                    }
+                }
+                
+            },false);
+
+            //甩尾+张嘴
+            function swing(fish){
+                if(Math.abs(fish.offsetDail) > 3){
+                    directionDail *= -1;
+                }
+
+                if(fish.offsetMouth > 5 || fish.offsetMouth < 0){
+                    directionMouth *= -1;
+                }
+
+                fish.offsetDail += directionDail*incrementDail;
+                fish.offsetMouth += directionMouth*incrementMouth;
+            };
+
+            //冒泡
+            function pop(bubble){
+                if(bubble.y < 0 || bubble.r > 15){
+                    bubble.x = fish.x + 60*Math.cos(fish.rotation);
+                    bubble.y = fish.y + 60*Math.sin(fish.rotation);
+                    bubble.r = 1 + Math.random()*2;
+                    bubble.bubbleRange = 0;
+                }
+                var bubbleX = Math.sin(bubble.angle)*bubble.bubbleRange;
+                bubble.angle += 0.05;
+                bubble.bubbleRange += 0.002;
+                bubble.x += bubbleX;
+                bubble.y -= bubble.incrementY;
+                bubble.r += 0.01;
+            };
+
+            //飞翔
+            function fly(shit){
+                if(shit.x > c.width){
+                    shit.x = 0;
+                }else if(shit.x < 0){
+                    shit.x = c.width;
+                }
+                if(shit.y > c.height){
+                    shit.y = 0;
+                }else if(shit.y < 0){
+                    shit.y = c.height;
+                }
+                shit.x += shit.vx;
+                shit.y += shit.vy;
+            }
+
+            (function run(){
+                
+                window.requestAnimationFrame(run,c);
+                ctx.clearRect(0,0,c.width,c.height);
+                
+                swing(fish);
+                if(fish.x > c.width + 20){
+                    //fish.x = -70;
+                }else if(fish.x < -20){
+                    //fish.x = c.width -70;
+                }
+
+                if(fish.y > c.height + 20){
+                    //fish.y = -70;
+                }else if(fish.y < -20){
+                    //fish.y = c.height -70;
+                }
+
+                fish.draw(ctx);
+
+                for(var i = 0; i < bubbles.length; i++){
+                    pop(bubbles[i]);
+                    bubbles[i].draw(ctx);
+                }
+
+                for(var i = 0; i < shits.length; i++){
+                    fly(shits[i]);
+                    shits[i].draw(ctx);
+                }
+
+            })();
+            
+        }
+    </script>

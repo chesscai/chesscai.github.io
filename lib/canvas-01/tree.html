@@ -1,18 +1,19 @@
 ---
 layout: view
-title: View
-description: "View"
+description: "canvas自然树"
 categories: [canvas,lib]
 ---
 
-<style>
-    html,body,canvas{
-        display: block;
-        margin: 0;
-        padding: 0;
-    }
-</style>
+    <style>
+        html,body,canvas{
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
     <canvas id="canvas">your browser do not support canvas</canvas>
+
+
     <script type="text/javascript">
 
         window.Utils = function(){};
@@ -232,13 +233,10 @@ categories: [canvas,lib]
         ctx.fillRect(0,0,w,h);
         ctx.restore();
 
-        //fallLeaves.forEach(sort);
-
 
         fallLeaves.forEach(draw);
         
         trees.sort(compare);
-        console.log(trees);
 
         trees.forEach(draw);
         

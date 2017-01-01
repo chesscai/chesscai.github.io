@@ -54,7 +54,7 @@ defaults:
     values:
       layout: "post"
       author: "chesscai"
-      header-img: "images/chess.png" # We don't want posts without a header image, that whould mean white on white
+      header-img: "images/plane.jpg" # We don't want posts without a header image, that whould mean white on white
 
 
 # Comments 

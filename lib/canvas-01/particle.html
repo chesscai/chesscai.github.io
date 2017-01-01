@@ -1,0 +1,394 @@
+---
+layout: view
+description: "图文粒子化"
+categories: [canvas,lib]
+---
+
+    <style>
+        html,body,*{
+            margin: 0;
+            padding: 0;
+            font-family: 'Miscrosoft YaHei';
+            font-size: 14px;
+        }
+        #canvas{
+            display: block;
+            background: #212e23;
+            background: -webkit-gradient(linear, 50% 0%, 50% 100%, from(#15014d), to(#02490a));
+            background: -webkit-linear-gradient(top, #15014d, #02490a);
+            background: -moz-linear-gradient(top, #15014d, #02490a);
+            background: -o-linear-gradient(top, #15014d, #02490a);
+            background: -ms-linear-gradient(top, #15014d, #02490a);
+        }
+        #canvas.painting{
+            cursor: crosshair;
+        }
+        p{
+            margin: 20px 0;
+            padding-left: 10px;
+            line-height: 1;
+            color: #fff;
+        }
+        #controller{
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            width: 120px;
+        }
+        input{
+            display: block;
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,.3);
+            outline: 0;
+            color: #fff;
+            text-align: center;
+            line-height: 40px;
+            text-indent: 10px;
+            border-radius: 5px;
+        }
+        button{
+            display: block;
+            margin-top: 10px;
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,.3);
+            outline: 0;
+            cursor: pointer;
+            color: #fff;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 5px;
+        }
+        input.active,
+        input:hover,
+        button.active,
+        button:hover{
+            border: 1px solid #fff;
+        }
+    </style>
+    
+    <canvas id="canvas">your browser do not support canvas</canvas>
+    <div id="controller">
+        <input type="text" id="text" maxlength="8" value="Infinite">
+        <button id="paint">painting</button>
+        <button id="render">render *_*</button>
+        <p>粒子数：<span id="particleNum"></span></p>
+    </div>
+    
+    
+    <script>
+        window.onload = function(){
+
+        /**工具函数 start**************************************************/
+
+            window.Utils = function(){};
+            //获取鼠标相对于ele的距离
+            Utils.prototype.captureMouse = function(ele){
+                var mouse = {
+                    x: 0,
+                    y: 0
+                };
+
+                ele.addEventListener('mousemove',function(e){
+                    var e = e || window.event;
+                    var x,y;
+                    if(e.pageX || e.pageY){
+                        //非IE可直接读取
+                        x = e.pageX;
+                        y = e.pageY;
+                    }else{
+                        //scrollLeft为body距离浏览器顶部的滚动距离；
+                        //body在chrome有效，在ff，ie为0；
+                        //documentElement在ff,ie有效，在chrome为0；
+                        x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                        y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+                    }
+
+                    x -= ele.offsetLeft;
+                    y -= ele.offsetTop;
+                    mouse.x = x;
+                    mouse.y = y;
+                },false);
+                return mouse;
+            };
+
+            /*判断当前鼠标位置是否在obj对象范围内
+             *mouse  必须    mouse/touch对象{x:0,y:0}
+             *obj    必须    要检测范围的对象
+             *type   非必须  检测范围类型，目前支持'rect'，'circle'，默认'circle'
+            */
+            Utils.prototype.isAreaIn = function(mouse,obj,type){
+                var checkType = arguments.length === 3 ? type : 'circle';
+                if(checkType === 'circle'){
+                    return Math.sqrt(Math.pow(mouse.x - obj.x,2) + Math.pow(mouse.y - obj.y,2)) < obj.r;
+                }else if(checkType === 'rect'){
+                    return !(mouse.x < obj.x || mouse.x > obj.x + obj.w || mouse.y < obj.y || mouse.y > obj.y + obj.h);
+                }
+            };
+
+            //animationFrame兼容
+            window.requestAnimationFrame = window.requestAnimationFrame ||
+                (window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.msRequestAnimationFrame ||
+                window.oRequestAnimationFrame ||
+                function(callback){
+                    return setTimeout(callback,1000/60);
+                });
+
+            window.cancelAnimationFrame = window.cancelAnimationFrame ||
+                (window.cancelRequestAnimationFrame ||
+                window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                window.clearTimeout);
+
+            //获取浏览器可视区域：前者是IE9+、other，后者是IE8-
+            var w = window.innerWidth || document.documentElement.clientWidth;
+            var h = window.innerHeight || document.documentElement.clientHeight;
+
+        /**工具函数 end**************************************************/
+
+            var canvas = document.getElementById('canvas'),
+                text = document.getElementById('text'),
+                paint = document.getElementById('paint'),
+                render = document.getElementById('render'),
+                particleNum = document.getElementById('particleNum'),
+                ctx = canvas.getContext('2d'),
+                utils = new Utils(),
+                mouse = utils.captureMouse(canvas),
+                renderMode = 1,                //渲染模式：1=文字，2=画笔
+                raf = null,                    //requestAnimationFrame
+                particle = [],                 //储存图像粒子
+                samplingDis = 6,               //取样间距,间距越小，密度越大
+                maxRadius = 6,                 //粒子缩放时最大半径
+                deltaRadius= 0.1,              //缩放时半径增量
+                easing = 0.08,                 //缓动参数
+
+                canIpaint = false,             //画笔开关
+                colors = [                     //粒子颜色区间
+                    '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+                    '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50',
+                    '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800',
+                    '#FF5722'
+                ];
+            canvas.width = w;
+            canvas.height = h;
+
+
+
+        /**text**************************************************/
+            var Ball = function(x,y,z){
+                this.dx = Math.floor(Math.random()*canvas.width);   //初始值（随机）
+                this.dy = Math.floor(Math.random()*canvas.height);
+                this.dz = Math.floor(Math.random()*2000-1000);      //[-1000,1000]
+                this.dr = Math.floor(Math.random()*maxRadius);      //[0,6]
+                this.initRadius = true;                             //排列完成时初始化随机半径
+                this.x = x;                                         //目标值（图像坐标）
+                this.y = y;
+                this.z = z;                                             
+                this.r = 5;
+                this.color = colors[Math.floor(Math.random()*colors.length)];
+            };
+            Ball.prototype.draw = function(ctx){
+                ctx.save();
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.dx,this.dy,this.r,0,Math.PI*2,false);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawText(ctx){
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.save();
+                ctx.fillStyle = 'rgba(255,255,255,1)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '200px 微软雅黑';
+                ctx.fillText(text.value,canvas.width/2,canvas.height/2);
+                ctx.restore();
+            }
+
+            
+
+        /**paint**************************************************/
+            function painting(){
+                if(canIpaint){
+                    ctx.lineTo(mouse.x,mouse.y);
+                    ctx.stroke();
+
+                }
+            }
+            
+            canvas.addEventListener('mousedown',function(e){
+                canIpaint = true;
+                var e = e || window.event;
+                var x,y;
+                if(e.pageX || e.pageY){
+                    //非IE可直接读取
+                    x = e.pageX;
+                    y = e.pageY;
+                }else{
+                    //scrollLeft为body距离浏览器顶部的滚动距离；
+                    //body在chrome有效，在ff，ie为0；
+                    //documentElement在ff,ie有效，在chrome为0；
+                    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+                }
+
+                x -= canvas.offsetLeft;
+                y -= canvas.offsetTop;
+
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#fff';
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x,y);
+
+                canvas.addEventListener('mousemove',painting,false);
+
+                canvas.addEventListener('mouseup',function(e){
+                    canIpaint = false;
+                    ctx.closePath();
+                    canvas.removeEventListener('mousemove',painting,false);
+                },false);
+            },false);
+
+
+
+            function getParticle(ctx){
+                particle = [];
+                if(renderMode === 1){
+                    samplingDis = 10;
+                }else if(renderMode === 2){
+                    samplingDis = 6;
+                }
+                var imageDate = ctx.getImageData(0,0,canvas.width,canvas.height);
+                for(var x = 0; x < imageDate.width; x+=samplingDis){
+                    for(var y = 0; y < imageDate.height; y+=samplingDis){
+                        var index = (y*imageDate.width + x)*4;
+                        if(imageDate.data[index] > 128){
+                            particle.push(new Ball(x,y,0));
+                        }
+                    }
+                }
+
+                particleNum.innerHTML = particle.length;
+                return particle;
+            }
+
+            
+
+            function run(){
+                raf = window.requestAnimationFrame(run,canvas);
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+
+                for(var i = 0;i < particle.length; i++){
+                    
+                    var ball = particle[i],
+                        offsetX = ball.x - ball.dx,
+                        offsetY = ball.y - ball.dy,
+                        offsetZ = ball.z - ball.dz,
+                        //angle = Math.atan2(offsetY,offsetX),
+                        dis = Math.sqrt(offsetX*offsetX + offsetY*offsetY + offsetZ*offsetZ);
+                    if(dis > 0.5){//性能优化：距离小于0.5不再缓动
+                        // ball.dx += Math.cos(angle);
+                        // ball.dy += Math.sin(angle);
+                        ball.dx += offsetX*easing;
+                        ball.dy += offsetY*easing;
+                        ball.dz += offsetZ*easing;
+                        ball.r = (ball.dz/40 + 5 < 1) ? 1 : (ball.dz/40 + 5); //[1,25+5]
+                    }else{
+                        ball.dx = ball.x;
+                        ball.dy = ball.y;
+                        ball.dz = ball.z;
+                        if(ball.initRadius){
+                            ball.initRadius = false;
+                            ball.r = ball.dr;
+                        }
+                        if(ball.r > maxRadius){
+                            ball.r = 0;
+                        }
+                        ball.r += deltaRadius;
+                    }
+
+                    ball.draw(ctx);
+                }
+            };
+
+            // window.addEventListener('keydown',function(e){
+            //  var e = e || window.event;
+            //  if(e.keyCode === 13){  //enter
+            //      if(document.activeElement === text){
+            //          drawText(ctx);
+            //          particle = getParticle(ctx);
+            //          run();
+            //          text.blur();
+            //      }else{
+            //          particle = getParticle(ctx);
+            //          run();
+            //          paint.blur();
+            //      }
+                    
+                    
+            //  }
+            // },false);
+
+            render.onclick = function(){
+                canvas.className = '';
+                this.disabled = true;
+                this.className = 'active';
+                text.className = '';
+                paint.className = '';
+                
+                if(renderMode === 1){
+                    drawText(ctx)
+                    particle = getParticle(ctx);
+                }else if(renderMode === 2){
+                    particle = getParticle(ctx);
+                    window.cancelAnimationFrame(raf);
+                    raf = window.requestAnimationFrame(run,canvas);
+                }
+                
+
+            };
+
+            text.onfocus = function(){
+                renderMode = 1;
+                canvas.className = '';
+                render.disabled = false;
+                this.className = 'active';
+                paint.className = '';
+                render.className = '';
+            }
+
+            paint.onclick = function(){
+                renderMode = 2;
+                window.cancelAnimationFrame(raf);
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                canvas.className = 'painting';
+                render.disabled = false;
+                this.className = 'active';
+                text.className = '';
+                render.className = '';
+            };
+
+
+
+
+            //初始化
+            drawText(ctx)
+            particle = getParticle(ctx);
+            run();
+
+
+
+        }
+    </script>

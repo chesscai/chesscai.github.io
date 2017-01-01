@@ -1,0 +1,63 @@
+---
+layout: view
+description: "ball简单实例"
+categories: [canvas,lib]
+---
+
+    <style>
+        #canvas{
+            display: block;
+            margin: 0;
+            background: #000;
+        }
+    </style>
+
+    <canvas id="canvas">your browser do not support canvas</canvas>
+
+    <script>
+        window.onload = function(){
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+            var W = window.innerWidth;
+            var H = window.innerHeight
+            var centerX = W/2;
+            var centerY = H/2;
+            var ball;         //ball实例
+            var speedX = 3;   //x轴速度
+            canvas.width = W;
+            canvas.height = H;
+
+            var Ball = function(){
+                this.x = 0;
+                this.y = 0;
+                this.r = 30;
+                this.color = 'rgba(255,255,255,.8)';
+            };
+
+            Ball.prototype.draw = function(context){
+                context.save();
+                context.translate(this.x,this.y);
+                context.fillStyle = this.color;
+                context.beginPath();
+                context.arc(0,0,this.r,0,Math.PI*2,false);
+                context.closePath();
+                context.fill();
+                context.restore();
+            }
+
+            ball = new Ball();
+            ball.y = centerY;
+
+            (function run(){
+                
+                window.requestAnimationFrame(run,canvas);
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+
+                //匀速直线运动
+                ball.x += speedX ;
+                ball.draw(ctx);
+
+            })();
+            
+        }
+    </script>
