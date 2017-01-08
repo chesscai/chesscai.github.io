@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
+<title>天下第一武道大会</title> 
+<style>
+	html,body,canvas{
+		display: block;
+		margin: 0;
+		padding: 0;
+		background: #000;
+	}
+	.tip{
+		position: fixed;
+		bottom: 0;
+		font-size: 14px;
+		line-height: 1.2;
+	}
+	#freeze-tip{
+		left: 0;
+		color: blue;
+	}
+	#woody-tip{
+		right: 0;
+		color: green;
+	}
+</style>
+
+</head> 
+<body onload="init();"  style="margin: 0;">
+    <canvas id="view">your browser do not support canvas</canvas>
+    <div class="tip" id="freeze-tip">
+    	*  freeze<br>
+    	*  移动：A  W  D  S <br>
+    	*  攻击：F 左右勾拳<br>
+    	*  攻击：G 旋风手<br>
+    	*  攻击：H 冰弹<br>
+    	*  攻击：T 隐藏技能
+    </div>
+    <div class="tip" id="woody-tip">
+    	*  woody<br>
+    	*  移动：left up right down<br>
+    	*  攻击：J 左右勾拳<br>
+    	*  攻击：K 旋风腿<br>
+    	*  攻击：L 火弹<br>
+    	*  攻击：I 隐藏技能
+    </div>
+
+    <script src="../lib/createjs-2015.11.26.min.js"></script>
+    <script src="role/BasePeople.js"></script>
+    <script src="role/Freeze.js"></script>
+    <script src="role/Boody.js"></script>
+    <script src="skill/Barrage.js"></script>
+    <script src="skill/IceBarrage.js"></script>
+    <script src="skill/FireBarrage.js"></script>
+	<script src="event.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>
