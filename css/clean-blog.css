@@ -306,6 +306,9 @@ hr.small {
   font-weight: 300;
   margin-bottom: 10px;
 }
+.post-preview > a > .post-picture {
+  width: 300px;
+}
 .post-preview > .post-meta {
   font-family: 'Lora', 'Times New Roman', serif;
   color: #808080;

@@ -1,43 +1,54 @@
 ---
-layout: page
-description: "成长之路"
+layout: page-canvas
+title: "Canvas"
+description: "canvas动画系列"
 ---
 
-{% for post in paginator.posts %}
 <div class="post-preview">
-    <a href="{{ post.url | prepend: site.baseurl }}">
-        <h2 class="post-title">            
-            {{ post.title }}
-        </h2>
-        {% if post.subtitle %}
-        <h3 class="post-subtitle">
-            {{ post.subtitle }}
-        </h3>
-        {% endif %}
-        <div class="post-content-preview">
-            {{ post.content | strip_html | truncate:150 }}
-        </div>
+    <a href="./lib/createjs/p3/index.html">
+        <h2 class="post-title">街头格斗</h2>
+        <img class="post-picture" src="./images/canvas-01/game.jpg">
+        <h3 class="post-content-preview">freeze vs woody 模拟格斗小游戏(createjs)</h3>
     </a>
-    <p class="post-meta">Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%B %-d, %Y" }}</p>
+    <p class="post-meta">Posted by chess on 2017.05</p>
 </div>
-
 <hr>
-{% endfor %}
 
-<!-- Pager -->
-{% if paginator.total_pages > 1 %}
-<ul class="pager">
-    {% if paginator.previous_page %}
-    <li class="previous">
-        <a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">&larr; Newer Posts</a>
-    </li>
-    {% endif %}
-    {% if paginator.next_page %}
-    <li class="next">
-        <a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}">Older Posts &rarr;</a>
-    </li>
-    {% endif %}
-</ul>
+<div class="post-preview">
+    <a href="./lib/canvas-01/particle.html">
+        <h2 class="post-title">图文粒子化</h2>
+        <img class="post-picture" src="./images/canvas-01/particle.png">
+        <h3 class="post-content-preview">文字编辑，画笔绘画，像素级粒子化用户输入</h3>
+    </a>
+    <p class="post-meta">Posted by chess on 2017.05</p>
+</div>
+<hr>
 
+<div class="post-preview">
+    <a href="./lib/canvas-01/tree.html">
+        <h2 class="post-title">纯代码森林景观</h2>
+        <img class="post-picture" src="./images/canvas-01/tree.png">
+        <h3 class="post-content-preview">贝塞尔曲线勾绘，渐变投影渲染，随机递归出森林景观</h3>
+    </a>
+    <p class="post-meta">Posted by chess on 2017.04</p>
+</div>
+<hr>
 
-{% endif %}
+<div class="post-preview">
+    <a href="./lib/canvas-01/ball3D.html">
+        <h2 class="post-title">三维爆炸小球</h2>
+        <img class="post-picture" src="./images/canvas-01/ball3d.jpg">
+        <h3 class="post-content-preview">通过远近关系构造三维模型，爆炸式3d效果</h3>
+    </a>
+    <p class="post-meta">Posted by chess on 2017.02</p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="./lib/canvas-01/fish.html">
+        <h2 class="post-title">冒泡像素鱼</h2>
+        <img class="post-picture" src="./images/canvas-01/fish.jpg">
+        <h3 class="post-content-preview">生动模拟小鱼游泳状态，漂浮气泡</h3>
+    </a>
+    <p class="post-meta">Posted by chess on 2017.02</p>
+</div>
