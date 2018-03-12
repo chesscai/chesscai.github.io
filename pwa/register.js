@@ -107,7 +107,7 @@ function unsubscribe() {
                   if (vuePwaUserId) {
                     // remove subscription user_id in localstorage
                     removeStorageItem('vue_pwa_user_id')
-                    // todo
+                    // todo db
                   }
                 })
                 .catch((e) => {
