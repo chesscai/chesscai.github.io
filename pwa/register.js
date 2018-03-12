@@ -34,7 +34,7 @@ function subscribe () {
   if (navigator.serviceWorker) {
     navigator.serviceWorker.register('./sw.js')
       .then(function (registration) {
-        if (serviceWorkerRegistration.pushManager) {
+        if (registration.pushManager) {
           return registration.pushManager.getSubscription()
             .then(function(subscription) {
               // if subscription exit
@@ -91,9 +91,9 @@ function subscribe () {
 function unsubscribe() {
   if (navigator.serviceWorker) {
     navigator.serviceWorker.ready
-      .then((serviceWorkerRegistration) => {
-        if (serviceWorkerRegistration.pushManager) {
-          serviceWorkerRegistration.pushManager.getSubscription()
+      .then((registration) => {
+        if (registration.pushManager) {
+          registration.pushManager.getSubscription()
             .then((subscription) => {
               // if subscription don't exit
               if (!subscription) {
